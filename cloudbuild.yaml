@@ -1,0 +1,46 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/security-ops-exam-prep:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/security-ops-exam-prep:latest'
+      - '.'
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/security-ops-exam-prep:$COMMIT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/security-ops-exam-prep:latest'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'security-ops-exam-prep'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/security-ops-exam-prep:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'GCP_PROJECT_ID=$PROJECT_ID,FIRESTORE_DATABASE_ID=swarm'
+
+images:
+  - 'gcr.io/$PROJECT_ID/security-ops-exam-prep:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/security-ops-exam-prep:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  timeout: '1200s'
